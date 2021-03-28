@@ -5,6 +5,7 @@ permalink: /about/
 ---
 
 ![alt text](/public/img/about.png)
+
 ###
 - 一点积累
 - 些许感触
