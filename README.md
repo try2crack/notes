@@ -16,5 +16,5 @@ permalink: /about/
 ### 联系
 - 490096773@qq.com
 
-![alt text](/public/img/about.jpg)
+![alt text](/public/img/about.png)
 
