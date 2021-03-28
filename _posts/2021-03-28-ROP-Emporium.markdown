@@ -7,7 +7,7 @@ categories: CTF
 
 ## ret2win
 EXP:
-```
+```python
 from pwn import *
 
 sh = process("./ret2win")
@@ -20,7 +20,7 @@ sh.interactive()
 
 ## split
 EXP:
-```
+```python
 from pwn import *
 
 sh = process('./split')
@@ -31,7 +31,7 @@ sh.interactive()
 
 ## callme
 EXP:
-```
+```python
 from pwn import *
 
 sh = process("./callme")
