@@ -6,7 +6,7 @@ permalink: /about/
 
 ![alt text](/public/img/about.png)
 
-###
+### 记录
 - 一点积累
 - 些许感触
 - 活着的幻想
