@@ -16,12 +16,5 @@ permalink: /about/
 ### 联系
 - 490096773@qq.com
 
-### _config.yml
-> Code block will look like this.
-```yml
-highlighter-theme: monokai //you can change your syntax color scheme.
-date_format: "%Y-%M-%D" //and date format.
-```
-
 ![alt text](/public/img/about.jpg)
 
