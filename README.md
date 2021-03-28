@@ -1,19 +1,20 @@
 ---
 layout: page
-title: About
+title: 关于
 permalink: /about/
 ---
 
-## Theme Monos
-> Simple and lightweight theme for Jekyll
+## 介绍
+> 心血来潮，也是脑袋记不住了，记下来会好点
 
-### Features
-- Responsive.
-- Syntax Highlight
-- Most optimized theme for tech blog.
-- Lightweight with minimum stylesheet.
-- Easy to customize.
-- Offers category menu.
+### 包括且不限于
+- 技术积累
+- 小感触
+- 奇怪的幻想
+- ...
+
+### 联系
+- 490096773@qq.com
 
 ### _config.yml
 > Code block will look like this.
@@ -22,12 +23,5 @@ highlighter-theme: monokai //you can change your syntax color scheme.
 date_format: "%Y-%M-%D" //and date format.
 ```
 
-### Screenshots
-#### Page
-![alt text](/public/img/screenshot-1.png)
-#### Articles
-![alt text](/public/img/screenshot-2.png)
-#### Page - Mobile
-![alt text](/public/img/screenshot-m1.png)
-#### Page - Articles
-![alt text](/public/img/screenshot-m2.png)
+![alt text](/public/img/about.jpg)
+
