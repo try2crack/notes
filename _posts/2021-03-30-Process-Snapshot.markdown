@@ -2,7 +2,7 @@
 layout: post
 title:  "AFL进程快照尝试"
 date:   2021-03-30 23:30:00
-categories: Fuzz技术
+categories: Fuzz
 ---
 
 ## 背景描述
