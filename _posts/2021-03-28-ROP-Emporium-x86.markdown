@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "ROP-Emporium Writeup"
+title:  "ROP-Emporium x86 Writeup"
 date:   2021-03-28 11:59:00 +0900
 categories: CTF
 ---
