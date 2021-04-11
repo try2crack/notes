@@ -1,0 +1,57 @@
+---
+layout: post
+title:  "动态规划-零钱"
+date:   2021-04-10 11:45:00 +0000
+categories: alogrithm
+---
+
+今天翻到一些算法的东西，虽然一般来说对应届生或者大厂面试会用得比较多，人日常工作大部分用不到，但可以很好的丰富思路，看到了一个博主写的很细致，禁不住看了一会，做一下笔录，作者通过对斐波那契序列来举例引入动态规划，同时套入公式，整个流程通俗易懂，原文地址：
+https://labuladong.gitbook.io/algo/bi-du-wen-zhang/dong-tai-gui-hua-xiang-jie-jin-jie
+不过，我想作为阅读笔记就只把结论性的东西记下吧，再对比较模糊的地方加以注释，以便翻阅，如下：
+
+零钱问题：关键在于1. 拆解问题, 2. 拆解问题后找到base case, 3. 备忘提升效率
+
+- 解决方法1：利用递归的思路解决问题。依次将最后的目标金额拆解，每次拆解过程为递归，而拆解的方式会因为面值的多样而不同，因此产生循环过程，递归的出口即是base case，不同拆解方式统计的数量使用min来决定并存储。
+
+```python
+def coinChange(coins: List[int], amount: int):
+    # 备忘录
+    memo = dict()
+    def dp(n):
+        # 查备忘录，避免重复计算
+        if n in memo: return memo[n]
+        # base case
+        if n == 0: return 0
+        if n < 0: return -1
+        res = float('INF')
+        for coin in coins:
+            subproblem = dp(n - coin) #递归对目标金额拆解，剩下的目标金额通过递归的方式求解
+            if subproblem == -1: continue
+            res = min(res, 1 + subproblem) # 比较多次对拆解的方式统计的数量，取最小值作为结果
+
+        # 记入备忘录
+        memo[n] = res if res != float('INF') else -1
+        return memo[n]
+
+    return dp(amount)
+```
+- 解决方法2: 从实现上来看和递归相反，从底向上，分别记录每个步长（状态）的最小统计值，直到生成目标步长（目标金额）的最小统计值，而每个状态的计算方式即是和不同的面值进行分别组合来确定
+
+```C++
+int coinChange(vector<int>& coins, int amount) {
+    // 数组大小为 amount + 1，初始值也为 amount + 1
+    vector<int> dp(amount + 1, amount + 1);
+    // base case
+    dp[0] = 0;
+    // 外层 for 循环在遍历所有状态的所有取值
+    for (int i = 0; i < dp.size(); i++) {
+        // 内层 for 循环在求所有选择的最小值
+        for (int coin : coins) {
+            // 子问题无解，跳过
+            if (i - coin < 0) continue;// 如果当前的coin已经大于此次的状态，不可能构造出零钱组合
+            dp[i] = min(dp[i], 1 + dp[i - coin]);// 如果满足基本要求，也要使用当前选中方案的统计数值和对i计算的历史最小值方案对比，当前选中方案即是使用此次循环符合条件的coin和已经计算出的dp[i-coin]作为组合
+        }
+    }
+    return (dp[amount] == amount + 1) ? -1 : dp[amount];
+}
+```
