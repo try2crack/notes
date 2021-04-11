@@ -37,7 +37,7 @@ def coinChange(coins: List[int], amount: int):
 ```
 - 解决方法2: 从实现上来看和递归相反，从底向上，分别记录每个步长（状态）的最小统计值，直到生成目标步长（目标金额）的最小统计值，而每个状态的计算方式即是和不同的面值进行分别组合来确定
 
-```C++
+```c++
 int coinChange(vector<int>& coins, int amount) {
     // 数组大小为 amount + 1，初始值也为 amount + 1
     vector<int> dp(amount + 1, amount + 1);
