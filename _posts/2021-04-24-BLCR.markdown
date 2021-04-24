@@ -1,5 +1,11 @@
+---
+layout: post
+title:  "BLCR"
+date:   2021-04-24 08:42:00
+categories: Fuzz
+---
 
-# 对BLCR进程停止机制的研究 #
+## 对BLCR进程停止机制的研究
 
 主要逻辑是先在用户层代码中注册信号，然后在运行时，用户层通过ioctl调用触发快照机制，内核中遍历进程task列表，并依次发送信号给task，用户层代码处理信号时会通过ioctl调用CR_OP_HAND_CHKPT给内核，内核使用等待机制等待所有task进入了barrier，后续进行收集进程内存等信息，在等待所有task进入barrier之前，还会设置task的procmask来防止进程收到其他信号，阻碍进程进入barrier。
 
