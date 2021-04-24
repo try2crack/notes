@@ -1,0 +1,88 @@
+
+# 对BLCR进程停止机制的研究 #
+
+主要逻辑是先在用户层代码中注册信号，然后在运行时，用户层通过ioctl调用触发快照机制，内核中遍历进程task列表，并依次发送信号给task，用户层代码处理信号时会通过ioctl调用CR_OP_HAND_CHKPT给内核，内核使用等待机制等待所有task进入了barrier，后续进行收集进程内存等信息，在等待所有task进入barrier之前，还会设置task的procmask来防止进程收到其他信号，阻碍进程进入barrier。
+
+- 应用层：
+	- 注册信号：cri_init -> sa.sa_sigaction -> cri_sigaction
+	- 函数调用：real_main -> cr_request_checkpoint -> cri_syscall_token(CR_OP_CHKPT_REQ)
+- 内核层：
+	- 函数调用：CR_OP_CHKPT_REQ -> cr_chkpt_req -> do_chkpt_req -> build_req -> cr_trigger_phase1 -> __cr_trigger_phase1_only -> do_trigger -> send_sig_info
+
+build_req负责将进程内所有线程加入到列表中，然后分别使用send_sig_info给用户线程发送消息，用户层接收到消息后，按以下流程处理并发送消息给内核：
+> CR_SIG_HANDLER -> crsig_chkpt(CR_OP_HAND_CHKPT)
+
+内核在收到消息后，按照以下流程处理：
+> cr_dump_self -> setprocmask -> cr_signal_phase_barrier -> cr_signal_predump_barrier ...dump ...
+
+-	其中setprocmask负责将进程的信号阻塞，防止在此期间进程再收到消息，不便于dump
+-	cr_signal_phase_barrier有待分析：TODO：
+-	cr_signal_predump_barrier内展开是一堆宏的实现，主要是通过函数wait_event_interruptible和aotmic_dec_and_test来保证所有task均响应到了信号，宏的展开过程有点繁琐，主要是分析代码搜索时漏掉了下划线，大致过程如下(去除了不重要的代码)：
+
+```c
+int cr_signal_predump_barrier(cr_task_t *cr_task, int block)
+{
+	cr_chkpt_proc_req_t *proc_req = cr_task->chkpt_proc_req;
+	struct task_struct *task = cr_task->task;
+	int once;
+
+	// CR_BARRIER_NOTIFY(cr_task, &proc_req->predump_barrier);
+	// 展开后
+	cr_task->step++,cr_barrier_notify(&proc_req->predump_barrier);
+
+	//once = cr_barrier_once_interruptible(&proc_req->predump_barrier, block);
+    // 展开后
+	once = block ? __cr_barrier_wait_interruptible(&proc_req->predump_barrier) : __cr_barrier_test(&proc_req->predump_barrier); 
+    
+	/* XXX: Do we need more care w.r.t. dead/dying tasks?  Might we race here?
+	 */
+	if (cri_task_dead(task)) {
+		// Don't check 'once' - if proc is already dead cleanup is pointless (and possibly unsafe)
+	} else if (once > 0) {
+		// restore any saved signal handler
+	    if (proc_req->saved_sa.sa.sa_handler != SIG_ERR) {
+			CR_SIGNAL_LOCK(task);
+    		CR_SIGACTION(task, CR_SIGNUM) = proc_req->saved_sa;
+			CR_SIGNAL_UNLOCK(task);
+			// NOTE: We don't reverse our forced unblocking of CR_SIGNUM
+			// here because the signal return path would just undo it.
+		}
+	}
+
+	return once;
+}
+
+#define CR_BARRIER_WAIT_COND(b)	((atomic_read(&((b)->count)) <= 0) || (b)->interrupted)
+int __cr_barrier_wait_interruptible(cr_barrier_t *barrier)
+{
+    int retval = wait_event_interruptible(barrier->wait, CR_BARRIER_WAIT_COND(barrier));
+    if (retval != 0) {
+		// 由中断导致，因此不触发do_barrier_once
+		barrier->interrupted = 1;
+		smp_wmb();
+		wake_up(&barrier->wait);
+		retval = -EINTR;
+    } else {
+        // 本代码逻辑导致，触发do_barrier_once
+    	retval = do_barrier_once(barrier);
+    }
+    return retval;
+}
+
+// 仅测试，barrier内部count非0则直接返回
+int __cr_barrier_test(cr_barrier_t *barrier)
+{
+    return CR_BARRIER_WAIT_COND(barrier) && do_barrier_once(barrier);
+}
+
+// 设置once，表示已经触发过
+static inline int do_barrier_once(cr_barrier_t *barrier)
+{
+    smp_rmb();
+    return !test_and_set_bit(0, &barrier->once);
+}
+```
+
+BLCR中在对其他资源处理时也会有相关barrier，原理相同。
+
+总的来说：BLCR对进程快照时，让进程停下来的方式主要是让所有task以信号处理的方式执行相同的代码路径，进入到相同的barrier。
