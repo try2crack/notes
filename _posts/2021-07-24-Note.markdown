@@ -9,3 +9,5 @@ categories: CTF
 
 - 从[https://github.com/sibears/IDAGolangHelper](https://) 下载IDAGolangHelper插件并配置（见插件配置和使用），go版本1.6，可以反编译名称大体如下：
 
+![img](/public/src/20210725/1.png)
+
