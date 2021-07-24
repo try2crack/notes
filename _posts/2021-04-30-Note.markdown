@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "日记"
-date:   2021-04-30 00:36:00 +0000
+date:   2021-04-30 00:36:00
 categories: Life
 ---
 

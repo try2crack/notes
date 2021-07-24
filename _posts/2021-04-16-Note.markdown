@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "动态规划-最长递增序列"
-date:   2021-04-16 07:017:00 +0000
+date:   2021-04-16 07:017:00
 categories: alogrithm
 ---
 
