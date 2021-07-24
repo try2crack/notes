@@ -1,8 +1,8 @@
 ---
 layout: post
 title:  "记录一次Go与BrainFuck的reverse"
-date:   2021-07-24 23:54:00 +0000
-categories: Reverse
+date:   2021-07-24 23:54:00
+categories: CTF
 ---
 
 - 题目名字为re longlong，一个x64上去除了符号的程序，从其中的字符串信息中，可以确认是个1.6版本的go的程序，本想直接分析下，但没有符号比较麻烦，因此最后又选择了先恢复符号（虽然最后证实不恢复符号没太大关系）
